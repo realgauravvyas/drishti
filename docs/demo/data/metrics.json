@@ -1,0 +1,41 @@
+{
+ "DRISHTI (full)": {
+  "auc_all": 0.8567391104997707,
+  "auc_blind": 0.8477777777777777,
+  "auc_reported": 0.8621875223837834
+ },
+ "no silence": {
+  "auc_all": 0.7953599266391563,
+  "auc_blind": 0.7105555555555556,
+  "auc_reported": 0.8076140677601891
+ },
+ "no terrain prior": {
+  "auc_all": 0.799811095827602,
+  "auc_blind": 0.8463888888888889,
+  "auc_reported": 0.8220017668266361
+ },
+ "no independence": {
+  "auc_all": 0.8396056854653828,
+  "auc_blind": 0.8480555555555556,
+  "auc_reported": 0.841673232576463
+ },
+ "no credibility": {
+  "auc_all": 0.8341604768454838,
+  "auc_blind": 0.8484722222222222,
+  "auc_reported": 0.8382661222930544
+ },
+ "reports only": {
+  "auc_all": 0.6969188445667125,
+  "auc_blind": 0.5,
+  "auc_reported": 0.7357280997063248
+ },
+ "dark_flag": {
+  "flagged": 78,
+  "precision": 0.6410256410256411,
+  "base_rate": 0.34029038112522686,
+  "lift": 1.883760683760684,
+  "truly_catastrophic": 23,
+  "zero_report": 12,
+  "population": 102143
+ }
+}

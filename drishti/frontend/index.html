@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRISHTI — District EOC</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#0b0f14; --panel:#111820; --panel2:#161f2a; --line:#1f2b39;
+  --ink:#e6edf5; --dim:#8fa3b8; --dim2:#5f748a;
+  --acc:#37a2ff; --ok:#2ec27e; --warn:#f5a524; --bad:#f2545b; --cat:#c026d3;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);
+  font:13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+
+/* ---------------------------------------------------------------- layout */
+#app{display:grid;grid-template-rows:auto 1fr auto;height:100vh}
+header{display:flex;align-items:center;gap:16px;padding:9px 16px;
+  background:linear-gradient(180deg,#121a24,#0d141c);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;gap:9px}
+.brand b{font-size:16px;letter-spacing:2.5px}
+.brand span{font-size:10.5px;color:var(--dim2);letter-spacing:.8px;text-transform:uppercase}
+.kpis{display:flex;gap:7px;margin-left:auto;flex-wrap:wrap}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:7px;
+  padding:5px 11px;min-width:78px}
+.kpi .v{font:600 16px/1.1 var(--mono)}
+.kpi .l{font-size:9.5px;color:var(--dim2);text-transform:uppercase;letter-spacing:.6px;
+  margin-top:2px;white-space:nowrap}
+.kpi.bad .v{color:var(--bad)} .kpi.warn .v{color:var(--warn)}
+.kpi.ok .v{color:var(--ok)} .kpi.acc .v{color:var(--acc)}
+
+main{display:grid;grid-template-columns:1fr 424px;min-height:0}
+#map{width:100%;height:100%;background:#0a0e13}
+aside{background:var(--panel);border-left:1px solid var(--line);
+  display:flex;flex-direction:column;min-height:0}
+
+.tabs{display:flex;border-bottom:1px solid var(--line);background:var(--panel2);
+  overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:9px 12px;border:0;background:none;color:var(--dim);font-size:11.5px;
+  border-bottom:2px solid transparent;white-space:nowrap;letter-spacing:.3px}
+.tab.on{color:var(--ink);border-bottom-color:var(--acc);background:rgba(55,162,255,.07)}
+.tab .n{color:var(--dim2);font:600 10px var(--mono);margin-left:4px}
+.pane{flex:1;overflow:auto;padding:11px}
+.pane::-webkit-scrollbar{width:9px}
+.pane::-webkit-scrollbar-thumb{background:#233040;border-radius:5px}
+
+footer{padding:9px 16px;background:var(--panel2);border-top:1px solid var(--line);
+  display:flex;align-items:center;gap:14px}
+#scrub{flex:1;accent-color:var(--acc)}
+.tnow{font:600 15px var(--mono);color:var(--acc);min-width:74px}
+.btn{background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:5px 11px;font-size:11.5px;color:var(--dim)}
+.btn:hover{border-color:var(--acc);color:var(--ink)}
+.btn.on{background:var(--acc);border-color:var(--acc);color:#04121f;font-weight:600}
+
+/* ------------------------------------------------------------- elements */
+.row{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:7px;
+  background:var(--panel2);border:1px solid var(--line);margin-bottom:6px;cursor:pointer}
+.row:hover{border-color:var(--acc)}
+.row.sel{border-color:var(--acc);background:rgba(55,162,255,.1)}
+.rank{font:600 11px var(--mono);color:var(--dim2);min-width:20px}
+.nm{font-weight:600;font-size:12.5px}
+.sub{font-size:10.5px;color:var(--dim2);margin-top:1px}
+.grow{flex:1;min-width:0}
+.pill{font:600 9px var(--mono);padding:2.5px 6px;border-radius:4px;letter-spacing:.4px;
+  white-space:nowrap}
+.INTACT{background:rgba(46,194,126,.16);color:var(--ok)}
+.MINOR{background:rgba(245,165,36,.15);color:var(--warn)}
+.MAJOR{background:rgba(242,84,91,.16);color:var(--bad)}
+.CATASTROPHIC{background:rgba(192,38,211,.2);color:#e879f9}
+.metric{text-align:right;font:600 12px var(--mono);min-width:46px}
+.metric small{display:block;font:9px/1 system-ui;color:var(--dim2);font-weight:400;
+  margin-top:2px;letter-spacing:.3px}
+
+.bar{height:5px;border-radius:3px;background:#1c2735;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.conf{display:flex;align-items:center;gap:5px;font:10px var(--mono);color:var(--dim2)}
+
+h4{margin:14px 0 7px;font-size:10.5px;color:var(--dim2);text-transform:uppercase;
+  letter-spacing:1.1px;font-weight:600}
+h4:first-child{margin-top:0}
+.note{font-size:11px;color:var(--dim);line-height:1.55;background:var(--panel2);
+  border:1px solid var(--line);border-left:2px solid var(--acc);
+  padding:8px 10px;border-radius:0 6px 6px 0;margin-bottom:9px}
+.note b{color:var(--ink)}
+.warnbox{border-left-color:var(--warn)}
+.badbox{border-left-color:var(--bad)}
+
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+th{text-align:left;color:var(--dim2);font-size:9.5px;text-transform:uppercase;
+  letter-spacing:.6px;padding:5px 6px;border-bottom:1px solid var(--line);font-weight:600}
+td{padding:5px 6px;border-bottom:1px solid #16202b}
+td.n{font:var(--mono);text-align:right}
+tr.hl td{background:rgba(55,162,255,.09)}
+
+.ev{background:var(--panel2);border:1px solid var(--line);border-radius:7px;
+  padding:8px 9px;margin-bottom:6px}
+.ev .top{display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap}
+.src{font:600 8.5px var(--mono);padding:2px 5px;border-radius:3px;letter-spacing:.4px}
+.SOCIAL{background:rgba(242,84,91,.15);color:#ff8a8f}
+.IVR_CALL{background:rgba(245,165,36,.15);color:var(--warn)}
+.SAT_PHONE{background:rgba(55,162,255,.15);color:var(--acc)}
+.HAM_RADIO{background:rgba(168,85,247,.15);color:#c084fc}
+.OFFICIAL{background:rgba(46,194,126,.15);color:var(--ok)}
+.FIELD_TEAM{background:rgba(46,194,126,.24);color:#5ee9a8}
+.ev .txt{color:#c9d6e4;font-size:11.5px;line-height:1.5;word-break:break-word}
+.ev .foot{display:flex;gap:10px;margin-top:6px;font:9.5px var(--mono);color:var(--dim2);
+  flex-wrap:wrap}
+.ev.supp{opacity:.5}
+.ev.supp .txt{text-decoration:line-through;text-decoration-color:#41546a}
+
+.legend{position:absolute;left:11px;bottom:11px;z-index:500;background:rgba(14,20,27,.93);
+  border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:10.5px;
+  backdrop-filter:blur(6px)}
+.legend .li{display:flex;align-items:center;gap:7px;margin:3px 0;color:var(--dim)}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.sq{width:11px;height:3px;display:inline-block;border-radius:2px}
+
+.loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:13px;z-index:9999}
+.spin{width:26px;height:26px;border:2.5px solid #223040;border-top-color:var(--acc);
+  border-radius:50%;animation:s .8s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+.leaflet-container{background:#0a0e13}
+.darktiles{filter:invert(1) hue-rotate(185deg) brightness(.72) contrast(1.28) saturate(.55)}
+.leaflet-control-attribution{background:rgba(11,15,20,.82)!important;color:#5f748a!important}
+.leaflet-control-attribution a{color:#8fa3b8!important}
+.leaflet-popup-content-wrapper{background:#131c26;color:var(--ink);border-radius:8px;
+  border:1px solid var(--line)}
+.leaflet-popup-tip{background:#131c26}
+.leaflet-bar a{background:#131c26;color:var(--ink);border-color:var(--line)}
+.leaflet-bar a:hover{background:#1c2836}
+.mini{font:9.5px var(--mono);color:var(--dim2)}
+.tag{display:inline-block;font:9px var(--mono);background:#1b2734;color:var(--dim);
+  padding:2px 5px;border-radius:3px;margin:2px 3px 0 0}
+</style>
+</head>
+<body>
+<div class="loading" id="load">
+  <div class="spin"></div>
+  <div style="letter-spacing:3px;font-size:14px">DRISHTI</div>
+  <div id="loadmsg" style="color:var(--dim2);font-size:11.5px">connecting…</div>
+</div>
+
+<div id="app" style="display:none">
+  <header>
+    <div class="brand"><b>DRISHTI</b><span>District EOC · Information Fog Resolver</span></div>
+    <div class="kpis" id="kpis"></div>
+  </header>
+
+  <main>
+    <div style="position:relative"><div id="map"></div>
+      <div class="legend">
+        <div style="color:var(--dim2);font-size:9px;letter-spacing:.8px;margin-bottom:4px">
+          BELIEVED DAMAGE (DSI)</div>
+        <div class="li"><i class="dot" style="background:#2ec27e"></i>Intact</div>
+        <div class="li"><i class="dot" style="background:#f5a524"></i>Minor</div>
+        <div class="li"><i class="dot" style="background:#f2545b"></i>Major</div>
+        <div class="li"><i class="dot" style="background:#c026d3"></i>Catastrophic</div>
+        <div class="li" style="margin-top:6px"><i class="dot" style="background:none;
+          border:2px solid #fff;width:11px;height:11px"></i>Comms blackout</div>
+        <div class="li"><i class="sq" style="background:#f2545b"></i>Route blocked</div>
+        <div class="li"><i class="sq" style="background:#37a2ff"></i>Asset tasking</div>
+      </div>
+    </div>
+    <aside>
+      <div class="tabs" id="tabs"></div>
+      <div class="pane" id="pane"></div>
+    </aside>
+  </main>
+
+  <footer>
+    <button class="btn" id="play">▶ Play</button>
+    <span class="tnow" id="tnow">T+00:00</span>
+    <input type="range" id="scrub" min="0" max="24" step="0.5" value="24">
+    <span class="mini" id="tinfo"></span>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const API = location.origin;
+const S = {t:24, tab:'triage', sel:null, state:null, plan:null, scenario:null,
+           metrics:null, playing:false, layers:{},
+           // set by the exported GitHub Pages build, so it never probes an
+           // API that is not there (and never logs a 404 doing it)
+           static: !!window.DRISHTI_STATIC, steps:null};
+
+const COL = {INTACT:'#2ec27e', MINOR:'#f5a524', MAJOR:'#f2545b', CATASTROPHIC:'#c026d3'};
+const fmt = n => n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+'k' : String(Math.round(n));
+const pct = n => (100*n).toFixed(0)+'%';
+const hhmm = h => 'T+'+String(Math.floor(h)).padStart(2,'0')+':'+
+                  String(Math.round((h%1)*60)).padStart(2,'0');
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;',
+                  '>':'&gt;','"':'&quot;'}[c]));
+
+/* The same page serves two deployments: the live FastAPI app, and a purely
+   static GitHub Pages build of precomputed snapshots. Everything above this
+   line is written against the API; this shim maps those calls onto files when
+   no backend is present, so there is only ever one frontend to maintain. */
+async function jget(u){ const r = await fetch(u);
+  if(!r.ok) throw new Error(u+' '+r.status); return r.json(); }
+
+function nearestStep(t){
+  if(!S.steps || !S.steps.length) return Math.round(t);
+  return S.steps.reduce((a,b)=>Math.abs(b-t)<Math.abs(a-t)?b:a);
+}
+
+async function api(p){
+  if(!S.static) {
+    try { return await jget(API+p); }
+    catch(e){ if(!S.triedStatic){ S.triedStatic=true;
+        try{ await jget('./data/scenario.json'); S.static=true; }catch(_){ throw e; } }
+      if(!S.static) throw e; }
+  }
+  // ---- static routing -------------------------------------------------
+  if(p.startsWith('/api/health')) return {ready:true, progress:'static build'};
+  if(p.startsWith('/api/scenario')){
+    const j = await jget('./data/scenario.json'); S.steps = j.timesteps; return j; }
+  if(p.startsWith('/api/state')){
+    const t = nearestStep(+(p.match(/t=([\d.]+)/)||[])[1] || 24);
+    return jget(`./data/state_${t}.json`); }
+  if(p.startsWith('/api/plan')){
+    const t = nearestStep(+(p.match(/t=([\d.]+)/)||[])[1] || 24);
+    return jget(`./data/plan_${t}.json`); }
+  if(p.startsWith('/api/settlement/')){
+    const sid = p.split('/api/settlement/')[1].split('?')[0];
+    return jget(`./data/detail/${sid}.json`); }
+  if(p.startsWith('/api/metrics')){
+    const [m,e] = await Promise.all([
+      jget('./data/metrics.json').catch(()=>null),
+      jget('./data/evaluation.json').catch(()=>null)]);
+    if(!m && !e) throw new Error('no metrics'); return {metrics:m, evaluation:e}; }
+  if(p.startsWith('/api/live')) throw new Error('live feeds need the backend');
+  throw new Error('unsupported in static build: '+p);
+}
+
+/* ------------------------------------------------------------------ map */
+let map, gSet, gPlan, gBlocked, gDepot;
+function initMap(){
+  map = L.map('map',{preferCanvas:true, zoomControl:true}).setView([30.48,79.13],10);
+  // Keyless OpenStreetMap tiles, darkened in CSS. CARTO's dark basemap now
+  // requires an API key, and this project has a hard zero-cost constraint.
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'&copy; OpenStreetMap contributors', maxZoom:18, className:'darktiles'
+  }).addTo(map);
+  gBlocked = L.layerGroup().addTo(map);
+  gSet = L.layerGroup().addTo(map);
+  gPlan = L.layerGroup().addTo(map);
+  gDepot = L.layerGroup().addTo(map);
+}
+
+function drawSettlements(){
+  gSet.clearLayers();
+  const rows = S.state.settlements;
+  for(const v of rows){
+    const dark = v.silence && v.silence.is_dark;
+    const r = 3 + Math.sqrt(v.population)/26 + v.dsi*2.6;
+    const m = L.circleMarker([v.lat,v.lon],{
+      radius:Math.min(15,r), color: dark?'#ffffff':COL[v.state],
+      weight: dark?1.8:0.7, opacity: dark?.95:.55,
+      fillColor:COL[v.state], fillOpacity: 0.18+0.62*v.dsi
+    });
+    m.on('click',()=>selectSettlement(v.sid));
+    m.bindTooltip(`<b>${esc(v.name)}</b><br>${v.state} · DSI ${v.dsi.toFixed(2)}
+      · conf ${pct(v.confidence)}<br>pop ${fmt(v.population)}${dark?'<br><b>COMMS BLACKOUT</b>':''}`,
+      {className:'tip'});
+    gSet.addLayer(m);
+  }
+}
+
+function drawPlan(){
+  gPlan.clearLayers(); gBlocked.clearLayers(); gDepot.clearLayers();
+  if(!S.plan) return;
+  const dep = {};
+  for(const d of S.plan.depots){ dep[d.did]=d;
+    gDepot.addLayer(L.marker([d.lat,d.lon],{icon:L.divIcon({className:'',
+      html:`<div style="background:#37a2ff;color:#04121f;font:600 9px monospace;
+        padding:2px 6px;border-radius:4px;white-space:nowrap;
+        transform:translate(-50%,-50%)">${esc(d.name)}</div>`})}));
+  }
+  for(const e of (S.plan.blocked_edges||[])){
+    gBlocked.addLayer(L.polyline([e.a,e.b],{color:'#f2545b',weight:3,opacity:.75}));
+  }
+  for(const a of S.plan.assignments){
+    const d = dep[a.depot]; if(!d) continue;
+    gPlan.addLayer(L.polyline([[d.lat,d.lon],[a.lat,a.lon]],{
+      color: a.type==='DRONE' ? '#a855f7' : '#37a2ff',
+      weight: a.type==='DRONE'?1.2:2, opacity:.62,
+      dashArray: a.type==='DRONE'?'3,4':null }));
+  }
+}
+
+/* ---------------------------------------------------------------- panes */
+const TABS = [
+  ['triage','Triage'], ['dark','Dark zones'], ['recon','Recon'],
+  ['plan','Assets'], ['evidence','Evidence'], ['bench','Benchmark'], ['about','Method']
+];
+function drawTabs(){
+  const st = S.state ? S.state.summary : {};
+  const counts = {dark: st.dark_zones, recon: S.plan?S.plan.summary.recon_sorties:null,
+    plan: S.plan?S.plan.summary.assets_committed:null,
+    triage: st.settlements, evidence: st.reports_ingested};
+  document.getElementById('tabs').innerHTML = TABS.map(([k,l])=>
+    `<button class="tab ${S.tab===k?'on':''}" data-k="${k}">${l}${
+      counts[k]!=null?`<span class="n">${fmt(counts[k])}</span>`:''}</button>`).join('');
+  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{S.tab=b.dataset.k;drawTabs();drawPane();});
+}
+
+function sevBar(dist){
+  return `<div class="bar">${['INTACT','MINOR','MAJOR','CATASTROPHIC'].map(k=>
+    `<i style="width:${100*dist[k]}%;background:${COL[k]}"></i>`).join('')}</div>`;
+}
+
+function rowHTML(v,i,extra){
+  const dark = v.silence && v.silence.is_dark;
+  return `<div class="row ${S.sel===v.sid?'sel':''}" data-sid="${v.sid}">
+    <span class="rank">${i+1}</span>
+    <div class="grow">
+      <div class="nm">${esc(v.name)} ${dark?'<span class="pill CATASTROPHIC">DARK</span>':''}</div>
+      <div class="sub">pop ${fmt(v.population)} · ${v.raw_report_count} reports
+        ${v.contradiction>0.45?' · <span style="color:var(--warn)">contested</span>':''}</div>
+      <div style="margin-top:5px">${sevBar(v.distribution)}</div>
+      ${extra||''}
+    </div>
+    <div class="metric">${v.dsi.toFixed(2)}<small>DSI</small></div>
+    <div class="metric" style="color:${v.confidence<0.35?'var(--warn)':'var(--dim)'}">
+      ${pct(v.confidence)}<small>conf</small></div>
+  </div>`;
+}
+
+function bindRows(){
+  document.querySelectorAll('.row[data-sid]').forEach(r=>
+    r.onclick=()=>selectSettlement(r.dataset.sid));
+}
+
+function drawPane(){
+  const el = document.getElementById('pane');
+  const st = S.state;
+  if(!st){ el.innerHTML='<div class="note">loading…</div>'; return; }
+  const rows = st.settlements;
+
+  if(S.tab==='triage'){
+    const top = rows.slice(0,60);
+    el.innerHTML = `<div class="note">Ranked by <b>expected unassisted casualties</b> —
+      population × belief in severe damage × survival decay. Not by how loud a place is.</div>`
+      + top.map((v,i)=>rowHTML(v,i)).join('');
+    bindRows();
+  }
+
+  else if(S.tab==='dark'){
+    const dark = rows.filter(v=>v.silence&&v.silence.is_dark);
+    el.innerHTML = `<div class="note badbox">These settlements have <b>stopped reporting</b>
+      while their cell towers are down and terrain says they were exposed. No report-driven
+      system can rank them — they produce no reports. Silence is being read as evidence,
+      not as absence of a problem.</div>`
+      + (dark.length?dark.slice(0,60).map((v,i)=>rowHTML(v,i,
+        `<div class="sub" style="margin-top:4px;color:var(--bad)">
+          ${v.silence.observed} reports received · ${v.silence.expected} expected ·
+          tower down ${v.silence.tower_down_h}h</div>`)).join('')
+        : '<div class="note">No blackout zones at this timestep.</div>');
+    bindRows();
+  }
+
+  else if(S.tab==='recon'){
+    const rec = rows.filter(v=>v.voi>0.2).sort((a,b)=>b.voi-a.voi).slice(0,40);
+    el.innerHTML = `<div class="note warnbox">Where uncertainty is most <b>expensive</b>:
+      high stakes, low confidence. Send a drone here, not an excavator — the job is to
+      collapse uncertainty so the next allocation round is right.</div>`
+      + rec.map((v,i)=>rowHTML(v,i,`<div class="sub" style="margin-top:4px">
+          VoI ${v.voi.toFixed(1)} · ${v.contradiction>0.4
+            ? `<span style="color:var(--warn)">${pct(v.contradiction)} of evidence conflicts</span>`
+            : 'unverified'}</div>`)).join('');
+    bindRows();
+  }
+
+  else if(S.tab==='plan'){
+    if(!S.plan){ el.innerHTML='<div class="note">computing plan…</div>'; return; }
+    const p=S.plan, s=p.summary;
+    el.innerHTML = `<div class="note">Greedy marginal-utility assignment over the
+      <b>damaged</b> road network. ${s.assets_committed}/${s.assets_total} assets committed,
+      ${s.recon_sorties} recon sorties, expected ${s.expected_lives_saved} lives saved.
+      ${s.unreachable_settlements} settlements have no passable surface route.</div>
+      <h4>Taskings</h4>
+      <table><thead><tr><th>Asset</th><th>Target</th><th class="n">ETA</th>
+      <th class="n">Lives</th></tr></thead><tbody>
+      ${p.assignments.map(a=>`<tr class="${a.type==='DRONE'?'':'hl'}">
+        <td><span class="src ${a.type==='DRONE'?'HAM_RADIO':'FIELD_TEAM'}">${a.type}</span></td>
+        <td>${esc(a.name)}<div class="mini">${esc(a.rationale.slice(0,72))}</div></td>
+        <td class="n">${a.eta_hours.toFixed(1)}h</td>
+        <td class="n">${a.expected_lives_saved.toFixed(1)}</td></tr>`).join('')}
+      </tbody></table>
+      ${p.unreachable.length?`<h4>Unreachable — air assets required</h4>
+        <table><tbody>${p.unreachable.slice(0,12).map(u=>`<tr><td>${esc(u.name)}</td>
+        <td class="n">pop ${fmt(u.population)}</td><td class="n">DSI ${u.dsi.toFixed(2)}</td>
+        </tr>`).join('')}</tbody></table>`:''}`;
+  }
+
+  else if(S.tab==='evidence'){
+    if(!S.sel){ el.innerHTML = `<div class="note">Select a settlement to see every report
+      that moved belief, and how much each one counted.</div>`; return; }
+    el.innerHTML='<div class="note">loading evidence…</div>';
+    api(`/api/settlement/${S.sel}?t=${S.t}`).then(d=>{
+      const gt = d._ground_truth;
+      el.innerHTML = `<h4>${esc(d.name)}</h4>
+        <div class="note">
+          Belief <b>${d.state}</b> · DSI ${d.dsi.toFixed(2)} · confidence ${pct(d.confidence)}<br>
+          ${sevBar(d.distribution)}
+          <div class="mini" style="margin-top:6px">
+            evidence mass ${pct(d.evidence_mass)} — the rest is terrain prior.
+            ${d.contradiction>0.4?`<br><span style="color:var(--warn)">contradiction
+              ${pct(d.contradiction)}: sources disagree</span>`:''}
+            ${d.silence&&d.silence.is_dark?`<br><span style="color:var(--bad)">
+              blackout: ${d.silence.observed} of ${d.silence.expected} expected reports,
+              tower down ${d.silence.tower_down_h}h</span>`:''}
+          </div>
+        </div>
+        ${gt?`<div class="note ${gt.state===d.state?'':'warnbox'}">
+          <b>Ground truth (simulation only):</b> ${gt.state} ·
+          ${gt.casualties} casualties · ${gt.trapped} trapped
+          ${gt.state===d.state?' — match':' — belief differs'}</div>`:''}
+        <h4>Evidence (${d.evidence_detail.length}) — weighted</h4>
+        ${d.evidence_detail.length? d.evidence_detail.map(e=>`
+          <div class="ev ${e.independence<0.15?'supp':''}">
+            <div class="top">
+              <span class="src ${e.source}">${e.source}</span>
+              <span class="mini">${hhmm(e.t)}</span>
+              ${e.panic>0.4?'<span class="pill MINOR">PANIC MARKERS</span>':''}
+              ${e.independence<0.15?'<span class="pill MAJOR">DUPLICATE — SUPPRESSED</span>':''}
+            </div>
+            <div class="txt">${esc(e.text)}</div>
+            <div class="foot">
+              <span>weight ${e.independence.toFixed(2)}</span>
+              <span>src cred ${e.credibility.toFixed(2)}</span>
+              <span>geo p ${e.geo_probability.toFixed(2)}</span>
+              ${e.claim_severity!=null?`<span>claims sev ${e.claim_severity.toFixed(2)}</span>`:''}
+            </div>
+          </div>`).join('')
+        : '<div class="note badbox">No reports at all. This settlement is known only through terrain physics and the silence of its tower.</div>'}`;
+    }).catch(e=>el.innerHTML=`<div class="note warnbox">Evidence drill-down is not
+      included for this settlement in the static build. Run the live app
+      (<code>python backend/app.py</code>) to inspect every settlement.</div>`);
+  }
+
+  else if(S.tab==='bench'){
+    if(!S.metrics){ el.innerHTML='<div class="note">metrics unavailable — run evaluate.py</div>'; return; }
+    const ev=S.metrics.evaluation, mt=S.metrics.metrics;
+    const rows=ev.rows;
+    el.innerHTML = `<div class="note">Same reports, same budget of ${ev.K} deployments,
+      at T+${ev.t}h. Scored against hidden ground truth.</div>
+      <h4>Deployment quality</h4>
+      <table><thead><tr><th>Method</th><th class="n">Severe found</th>
+      <th class="n">People reached</th></tr></thead><tbody>
+      ${rows.map(r=>`<tr class="${r.method.startsWith('DRISHTI')?'hl':''}">
+        <td>${esc(r.method)}</td>
+        <td class="n">${r.catastrophic_found}/${r.catastrophic_total}</td>
+        <td class="n">${fmt(r.casualties_reached)}</td></tr>`).join('')}
+      </tbody></table>
+      <h4>Detection quality (ROC-AUC)</h4>
+      <table><thead><tr><th>Variant</th><th class="n">All</th>
+      <th class="n">Never reported</th></tr></thead><tbody>
+      ${Object.entries(mt).filter(([k,v])=>v && v.auc_all!=null).map(([k,v])=>
+        `<tr class="${k.startsWith('DRISHTI')?'hl':''}"><td>${esc(k)}</td>
+        <td class="n">${v.auc_all.toFixed(3)}</td>
+        <td class="n">${v.auc_blind.toFixed(3)}</td></tr>`).join('')}
+      </tbody></table>
+      <div class="note" style="margin-top:10px">For settlements that never sent a
+        report, a report-driven system scores <b>0.500</b> — a coin flip, by construction.
+        DRISHTI scores <b>${(mt['DRISHTI (full)']||{}).auc_blind?.toFixed(3)}</b>.</div>
+      ${mt.dark_flag?`<h4>Dark-zone flag</h4><div class="note">
+        ${mt.dark_flag.flagged} flagged · <b>${pct(mt.dark_flag.precision)}</b> truly severe
+        vs ${pct(mt.dark_flag.base_rate)} base rate
+        (<b>${mt.dark_flag.lift.toFixed(2)}×</b> lift) ·
+        ${mt.dark_flag.zero_report} had zero reports.</div>`:''}`;
+  }
+
+  else if(S.tab==='about'){
+    const su=S.state.summary;
+    el.innerHTML = `
+      <h4>The problem</h4>
+      <div class="note">In the first 24 hours the EOC is flooded with fragmentary,
+        contradictory, unverified reports — and hears <b>nothing at all</b> from the places
+        that were hit hardest, because the people and the towers are both gone.
+        Ranking by report volume therefore ranks the worst places as fine.</div>
+      <h4>Five mechanisms</h4>
+      <div class="note"><b>1 · Geo-resolution.</b> "the village past Gaurikund" becomes a
+        probability distribution over settlements. This district has four Chandrapuri and
+        three Kund — ambiguity is preserved, never guessed away.</div>
+      <div class="note"><b>2 · Corroboration graph.</b> Near-duplicate reports are clustered
+        and repeat messages from one channel discounted, so one rumour shared 90 times
+        counts as one witness, not ninety.</div>
+      <div class="note"><b>3 · Evidence fusion.</b> Dempster-Shafer combination of simple
+        support functions in closed form, in log space, with source reliability learned
+        online.</div>
+      <div class="note badbox"><b>4 · Silence as evidence.</b> Cell-tower liveness is a
+        different observation from citizen chatter: an unharmed village is quiet too.
+        A tower that stops answering, in terrain that says exposed, becomes positive
+        evidence of catastrophe.</div>
+      <div class="note"><b>5 · Two queues.</b> Scarce assets go where belief is strong.
+        Cheap drones go where uncertainty is expensive.</div>
+      <h4>Self-knowledge</h4>
+      <div class="note">Terrain prior trust, refitted every cycle against confirmed
+        ground evidence: <b>${su.prior_trust}</b>. When terrain stops predicting damage,
+        the engine shrinks it toward climatology on its own.</div>
+      <h4>Learned source credibility</h4>
+      <table><tbody>${Object.entries(su.source_credibility).map(([k,v])=>
+        `<tr><td><span class="src ${k}">${k}</span></td>
+        <td class="n">${v.toFixed(3)}</td></tr>`).join('')}</tbody></table>
+      <h4>Data — all free, no keys</h4>
+      <div class="note">OpenStreetMap (2059 settlements, 401 roads, 125 bridges, 60 rivers) ·
+        Open-Meteo elevation + rainfall · USGS earthquake catalogue · SRTM-derived terrain.
+        Runs fully offline once cached.</div>`;
+  }
+}
+
+function drawKPIs(){
+  const s = S.state.summary;
+  const k = [
+    ['acc', fmt(s.reports_ingested), 'reports in'],
+    ['bad', s.state_counts.CATASTROPHIC, 'catastrophic'],
+    ['warn', s.state_counts.MAJOR, 'major'],
+    ['bad', s.dark_zones, 'dark zones'],
+    ['warn', s.contested, 'contested'],
+    ['acc', fmt(s.population_at_risk), 'pop at risk'],
+  ];
+  if(S.plan) k.push(['ok', S.plan.summary.expected_lives_saved, 'exp. lives saved']);
+  document.getElementById('kpis').innerHTML = k.map(([c,v,l])=>
+    `<div class="kpi ${c}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+}
+
+async function selectSettlement(sid){
+  S.sel = sid; S.tab='evidence'; drawTabs(); drawPane();
+  const v = S.state.settlements.find(x=>x.sid===sid);
+  if(v) map.setView([v.lat,v.lon], Math.max(map.getZoom(),12));
+}
+
+/* ---------------------------------------------------------------- cycle */
+let busy=false;
+async function refresh(withPlan=true){
+  if(busy) return; busy=true;
+  try{
+    S.state = await api(`/api/state?t=${S.t}`);
+    drawKPIs(); drawSettlements();
+    if(withPlan){ S.plan = await api(`/api/plan?t=${S.t}`); drawPlan(); drawKPIs(); }
+    drawTabs(); drawPane();
+    document.getElementById('tinfo').textContent =
+      `${S.state.summary.settlements} settlements · prior trust ${S.state.summary.prior_trust}`;
+  }catch(e){ console.error(e); }
+  busy=false;
+}
+
+function setT(t, withPlan){
+  S.t = t;
+  document.getElementById('tnow').textContent = hhmm(t);
+  document.getElementById('scrub').value = t;
+  refresh(withPlan);
+}
+
+async function boot(){
+  const msg = document.getElementById('loadmsg');
+  for(let i=0;i<180;i++){
+    try{ const h = await api('/api/health');
+      if(h.ready) break;
+      if(h.error){ msg.textContent = 'error: '+h.error; return; }
+      msg.textContent = h.progress||'warming up…';
+    }catch(e){ msg.textContent='waiting for engine…'; }
+    await new Promise(r=>setTimeout(r,900));
+  }
+  document.getElementById('load').style.display='none';
+  document.getElementById('app').style.display='grid';
+  initMap();
+  S.scenario = await api('/api/scenario');
+  try{ S.metrics = await api('/api/metrics'); }catch(e){}
+  if(S.scenario.epicentre){
+    L.circle(S.scenario.epicentre,{radius:2500,color:'#f2545b',weight:1.5,
+      fill:false,dashArray:'4,4'}).addTo(map)
+      .bindTooltip(`Epicentre M${S.scenario.magnitude}`);
+  }
+  if(S.static){
+    document.querySelector('.brand span').textContent =
+      'District EOC · Information Fog Resolver · static demo build';
+  }
+  drawTabs();
+  setT(24,true);
+
+  document.getElementById('scrub').oninput = e=>{
+    S.t = +e.target.value;
+    document.getElementById('tnow').textContent = hhmm(S.t);
+  };
+  document.getElementById('scrub').onchange = e=> setT(nearestStep(+e.target.value),true);
+  document.getElementById('play').onclick = ()=>{
+    S.playing=!S.playing;
+    document.getElementById('play').classList.toggle('on',S.playing);
+    document.getElementById('play').textContent = S.playing?'❚❚ Pause':'▶ Play';
+    if(S.playing) tick();
+  };
+}
+async function tick(){
+  while(S.playing){
+    let t = S.static ? nearestStep(S.t+2.5) : S.t + 1;
+    if(t>24 || t<=S.t) t = S.static ? S.steps[0] : 0;
+    setT(t,false);
+    await new Promise(r=>setTimeout(r,900));
+  }
+  refresh(true);
+}
+boot();
+</script>
+</body>
+</html>

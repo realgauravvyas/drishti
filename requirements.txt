@@ -1,0 +1,17 @@
+# DRISHTI — Post-Disaster Information Fog Resolver
+# Every dependency is free and open source. No paid services, no API keys.
+
+# --- core engine ---
+numpy>=1.26
+scipy>=1.11
+scikit-learn>=1.3         # TF-IDF for the corroboration graph
+networkx>=3.1             # damaged road network routing
+rapidfuzz>=3.0            # fuzzy place-name resolution
+
+# --- API ---
+fastapi>=0.110
+uvicorn>=0.27
+
+# --- tests / tooling (optional) ---
+pytest>=7.4
+playwright>=1.40          # end-to-end UI test: python -m playwright install chromium

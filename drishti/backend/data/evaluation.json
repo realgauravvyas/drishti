@@ -1,0 +1,86 @@
+{
+ "rows": [
+  {
+   "method": "VOLUME",
+   "catastrophic_found": 2,
+   "catastrophic_total": 122,
+   "recall": 0.0164,
+   "casualties_reached": 1006,
+   "casualties_total": 10928,
+   "casualty_coverage": 0.0921,
+   "wasted_deployments": 17
+  },
+  {
+   "method": "LOUDEST",
+   "catastrophic_found": 8,
+   "catastrophic_total": 122,
+   "recall": 0.0656,
+   "casualties_reached": 506,
+   "casualties_total": 10928,
+   "casualty_coverage": 0.0463,
+   "wasted_deployments": 10
+  },
+  {
+   "method": "NAIVE_MEAN",
+   "catastrophic_found": 12,
+   "catastrophic_total": 122,
+   "recall": 0.0984,
+   "casualties_reached": 484,
+   "casualties_total": 10928,
+   "casualty_coverage": 0.0443,
+   "wasted_deployments": 9
+  },
+  {
+   "method": "DRISHTI (full)",
+   "catastrophic_found": 12,
+   "catastrophic_total": 122,
+   "recall": 0.0984,
+   "casualties_reached": 6057,
+   "casualties_total": 10928,
+   "casualty_coverage": 0.5543,
+   "wasted_deployments": 12
+  },
+  {
+   "method": "  - no silence engine",
+   "catastrophic_found": 9,
+   "catastrophic_total": 122,
+   "recall": 0.0738,
+   "casualties_reached": 5420,
+   "casualties_total": 10928,
+   "casualty_coverage": 0.496,
+   "wasted_deployments": 13
+  },
+  {
+   "method": "  - no independence",
+   "catastrophic_found": 12,
+   "catastrophic_total": 122,
+   "recall": 0.0984,
+   "casualties_reached": 5830,
+   "casualties_total": 10928,
+   "casualty_coverage": 0.5335,
+   "wasted_deployments": 13
+  },
+  {
+   "method": "  - no source credib.",
+   "catastrophic_found": 12,
+   "catastrophic_total": 122,
+   "recall": 0.0984,
+   "casualties_reached": 6066,
+   "casualties_total": 10928,
+   "casualty_coverage": 0.5551,
+   "wasted_deployments": 12
+  },
+  {
+   "method": "  - no terrain prior",
+   "catastrophic_found": 13,
+   "catastrophic_total": 122,
+   "recall": 0.1066,
+   "casualties_reached": 6028,
+   "casualties_total": 10928,
+   "casualty_coverage": 0.5516,
+   "wasted_deployments": 14
+  }
+ ],
+ "K": 40,
+ "t": 24.0
+}

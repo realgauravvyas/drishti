@@ -1,0 +1,34 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# --- OS / editors ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- DRISHTI generated artefacts -------------------------------------------
+# Raw Overpass responses: large, and refetchable with fetch_osm.py
+drishti/backend/data/_raw_*.json
+drishti/backend/data/_fetch.log
+drishti/backend/data/_server.log
+
+# Derived caches, rebuilt by run_all.py in ~50s
+drishti/backend/data/roadgraph.pkl
+drishti/backend/data/livecache.json
+
+# NOTE: gazetteer.json, elevation.json and the scenario/metric JSONs are
+# deliberately COMMITTED. They make the repo reproducible offline and let a
+# reviewer run the app without waiting on Overpass rate limits.
+
+# --- Credentials: never commit, even if a token file is placed here later ---
+gh_token.txt
+*token*.txt
+*.pem
+*.key
+.env
