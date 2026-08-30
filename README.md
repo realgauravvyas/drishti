@@ -2,6 +2,8 @@
 
 **Avinya 2026 · Final Round · Problem Statement 5 · Track: Prakriti**
 
+**Live demo → https://realgauravvyas.github.io/drishti/**
+
 > In the first 24 hours after a multi-hazard disaster, a District Emergency
 > Operations Centre is flooded with fragmentary, contradictory, unverified
 > reports — and hears **nothing at all** from the places that were hit hardest,
