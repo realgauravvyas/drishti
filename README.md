@@ -15,7 +15,7 @@ DRISHTI turns that fog into a calibrated, auditable belief about every
 settlement in the district, and converts it into an asset-deployment plan over
 a road network that has itself been damaged.
 
-**Built in one hackathon, on ₹0. No paid APIs, no API keys, no cloud.**
+
 
 ![DRISHTI district EOC dashboard](docs/screenshots/overview.png)
 
