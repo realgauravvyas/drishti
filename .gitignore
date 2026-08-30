@@ -32,3 +32,6 @@ gh_token.txt
 *.pem
 *.key
 .env
+
+# Competition problem statement — organisers' document, not ours to redistribute
+AVINYA_2026_PS.pdf
