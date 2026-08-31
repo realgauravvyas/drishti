@@ -267,7 +267,10 @@ def fig_blind():
         ax.text(bar.get_x() + bar.get_width() / 2, v + 0.022, "%.3f" % v,
                 ha="center", fontsize=22, fontweight="bold", color=INK)
     ax.axhline(0.5, color=GREY, ls="--", lw=1.6, zorder=2)
-    ax.text(-0.46, 0.518, "0.5 = coin flip", fontsize=13, color=GREY)
+    # Label the reference line just outside the axes. Anywhere inside collides:
+    # the 0.500 bar's own value label sits at exactly this height.
+    ax.text(1.012, 0.5, "0.5 = coin flip", transform=ax.get_yaxis_transform(),
+            ha="left", va="center", fontsize=12, color=GREY)
     ax.set_ylim(0, 1.02)
     ax.set_ylabel("ROC-AUC", fontsize=15)
     ax.tick_params(axis="x", labelsize=13.5)
