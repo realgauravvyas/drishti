@@ -35,3 +35,14 @@ gh_token.txt
 
 # Competition problem statement — organisers' document, not ours to redistribute
 AVINYA_2026_PS.pdf
+
+# Conference poster template — organisers' document, same policy as the PS.
+# build_poster.py expects it in the repo root; download it from the organisers.
+1st_International_Conference_on_Sustainable_Innovation_and_Green.pptx
+
+# PowerPoint PNG/PDF export scratch — regenerated on demand
+drishti/poster/render/
+drishti/deck/render/
+
+# CarbonCampus (Round 1) poster lives in the carboncampus repo, not this one
+poster_round1/
