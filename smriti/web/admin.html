@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Organiser — Smriti</title>
+<link rel="stylesheet" href="/static/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>📷</text></svg>">
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" href="/index.html">
+    <span class="mark">स</span>
+    <b>Smriti</b>
+    <span>organiser</span>
+  </a>
+  <div class="spacer"></div>
+  <span class="muted" id="engine-badge"></span>
+</header>
+
+<main class="wrap">
+
+  <!-- create ------------------------------------------------------------- -->
+  <section id="step-create" class="hide narrow" style="margin:0 auto">
+    <h1>Create an album</h1>
+    <p class="lede">
+      Upload the photos once. Everyone else gets their own pictures with a
+      selfie and an 8-character code.
+    </p>
+
+    <div class="card">
+      <form id="create-form">
+        <label class="field">
+          <span>Event name</span>
+          <input type="text" id="name" required maxlength="80"
+                 placeholder="Goa trip, March 2026" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>Note for guests <span class="muted">(optional)</span></span>
+          <input type="text" id="notes" maxlength="200"
+                 placeholder="Day 1–3, shot by Ravi" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>Delete everything after</span>
+          <select id="retention">
+            <option value="7">7 days</option>
+            <option value="30" selected>30 days</option>
+            <option value="90">90 days</option>
+            <option value="0">Never (delete it yourself)</option>
+          </select>
+        </label>
+        <label class="row" style="margin-bottom:16px">
+          <input type="checkbox" id="allow-download" checked style="width:auto">
+          <span>Let guests download their photos as a ZIP</span>
+        </label>
+        <button type="submit" id="create-btn">Create album</button>
+      </form>
+      <div id="create-msg"></div>
+    </div>
+
+    <div class="card tight">
+      <h3>Your responsibility as the organiser</h3>
+      <p class="muted" style="margin:0">
+        You are uploading other people's faces. Tell the group that the album is
+        face-searchable, share the code only with them, and delete the event when
+        it has served its purpose. If someone asks to be removed, delete their
+        photos — the search index updates immediately.
+      </p>
+    </div>
+
+    <p class="muted" id="known-events"></p>
+  </section>
+
+  <!-- dashboard ---------------------------------------------------------- -->
+  <section id="step-dash" class="hide">
+    <div class="row" style="align-items:flex-start;margin:20px 0 10px">
+      <div class="grow">
+        <h1 style="margin:0" id="dash-name"></h1>
+        <p class="muted" id="dash-sub" style="margin:6px 0 0"></p>
+      </div>
+      <button class="ghost small" id="new-event">New album</button>
+    </div>
+
+    <div class="card">
+      <h3>Share with your group</h3>
+      <div class="share-code" id="share-code"></div>
+      <div class="copybox" style="margin-bottom:8px">
+        <code id="share-url"></code>
+        <button class="ghost small" id="copy-url">Copy link</button>
+      </div>
+      <p class="muted" style="margin:0">
+        Anyone with this link can search the album with their own selfie. They
+        cannot browse it, and they only ever receive photos they match.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>Photos</h3>
+      <div class="drop" id="drop">
+        <input type="file" id="file" accept="image/*" multiple>
+        <div class="big">Drop the album here</div>
+        <div class="muted">or tap to choose — JPEG, PNG, WebP, HEIC</div>
+      </div>
+      <div id="upload-progress" class="hide" style="margin-top:14px">
+        <div class="bar"><i id="upload-bar"></i></div>
+        <p class="muted" id="upload-text" style="margin:8px 0 0"></p>
+      </div>
+      <div id="upload-msg"></div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <h3 style="margin:0" class="grow">Indexing</h3>
+        <button class="ghost small" id="reindex">Re-index all</button>
+      </div>
+      <div class="bar" style="margin-bottom:14px"><i id="index-bar"></i></div>
+      <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <h3 style="margin:0" class="grow">People in this album</h3>
+        <button class="ghost small" id="load-people">Count distinct people</button>
+      </div>
+      <div id="people"><p class="muted" style="margin:0">
+        Groups every detected face by identity, so you can see how many different
+        people the album covers. This is an estimate, not a guest list.
+      </p></div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <h3 style="margin:0" class="grow">Album <span class="muted" id="gallery-count"></span></h3>
+        <button class="ghost small" id="refresh-gallery">Refresh</button>
+      </div>
+      <div class="grid" id="gallery"></div>
+    </div>
+
+    <div class="card">
+      <h3>Searches</h3>
+      <div id="searches"><p class="muted" style="margin:0">No searches yet.</p></div>
+    </div>
+
+    <div class="card">
+      <h3>Delete this album</h3>
+      <p class="muted">
+        Removes every photo, thumbnail and face fingerprint from the server
+        immediately and permanently. The share code stops working.
+      </p>
+      <button class="danger" id="delete-event">Delete album and all photos</button>
+      <div id="delete-msg"></div>
+    </div>
+  </section>
+
+  <!-- credentials -------------------------------------------------------- -->
+  <section id="step-token" class="hide narrow" style="margin:0 auto">
+    <h1>Organiser access</h1>
+    <p class="lede">This album needs its organiser token — the long secret shown when it was created.</p>
+    <div class="card">
+      <label class="field">
+        <span>Organiser token</span>
+        <input type="text" id="token-input" autocomplete="off" spellcheck="false">
+      </label>
+      <button id="token-go">Open album</button>
+      <div id="token-msg"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap"><p class="muted"><a href="/index.html">Guest view</a> · <a href="/docs">API docs</a></p></footer>
+
+<script type="module" src="/static/admin.js"></script>
+</body>
+</html>

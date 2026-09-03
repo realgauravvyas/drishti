@@ -1,0 +1,21 @@
+services:
+  smriti:
+    build: .
+    image: smriti:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      # Photos, the database and the downloaded weights all live here. Back this
+      # up, and understand that deleting it deletes everyone's photos.
+      - smriti-data:/data
+    environment:
+      SMRITI_ENGINE: sface
+      SMRITI_WORKERS: "4"
+      SMRITI_RETENTION_DAYS: "30"
+      # Set this to the address guests actually type, so share links are correct
+      # behind a reverse proxy:
+      # SMRITI_PUBLIC_URL: https://photos.example.com
+    restart: unless-stopped
+
+volumes:
+  smriti-data:

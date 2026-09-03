@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find my photos — Smriti</title>
+<link rel="stylesheet" href="/static/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>📷</text></svg>">
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" href="/index.html">
+    <span class="mark">स</span>
+    <b>Smriti</b>
+  </a>
+  <div class="spacer"></div>
+  <span class="muted" id="event-name"></span>
+</header>
+
+<main class="wrap">
+  <div id="boot" class="card"><div class="row"><i class="spin dark"></i> Loading event…</div></div>
+
+  <!-- step 1: selfie ---------------------------------------------------- -->
+  <section id="step-selfie" class="hide narrow" style="margin:0 auto">
+    <h1 id="title">Find your photos</h1>
+    <p class="lede" id="subtitle"></p>
+
+    <div id="pending-warning"></div>
+
+    <div class="drop" id="drop">
+      <input type="file" id="file" accept="image/*" multiple>
+      <div class="big">Add a selfie</div>
+      <div class="muted">Tap to choose or take a photo — up to 3 for a better match</div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <button class="ghost small" id="camera">Use camera</button>
+      <span class="muted">Front-facing, well lit, just you in frame.</span>
+    </div>
+    <input type="file" id="file-camera" accept="image/*" capture="user" class="hide">
+
+    <div class="grid" id="selfies" style="margin-top:16px;grid-template-columns:repeat(auto-fill,minmax(96px,1fr))"></div>
+
+    <div id="selfie-msg"></div>
+
+    <button id="search" style="margin-top:14px" disabled>Find my photos</button>
+
+    <p class="muted" style="margin-top:18px">
+      Your selfie is used for this one search and is never stored. Matching runs
+      on this server only.
+    </p>
+  </section>
+
+  <!-- step 2: searching -------------------------------------------------- -->
+  <section id="step-searching" class="hide narrow" style="margin:0 auto;text-align:center;padding:60px 0">
+    <div class="row" style="justify-content:center"><i class="spin dark"></i>
+      <b id="searching-text">Comparing your face against the album…</b></div>
+    <p class="muted" id="searching-sub" style="margin-top:10px"></p>
+  </section>
+
+  <!-- step 3: results ---------------------------------------------------- -->
+  <section id="step-results" class="hide">
+    <div class="row" style="align-items:flex-start;margin:20px 0 4px">
+      <div class="grow">
+        <h1 style="margin:0" id="results-title"></h1>
+        <p class="muted" id="results-sub" style="margin:6px 0 0"></p>
+      </div>
+      <button class="ghost small" id="again">New search</button>
+    </div>
+
+    <div id="results-msg"></div>
+
+    <div class="card tight row" id="actionbar" style="position:sticky;top:63px;z-index:10">
+      <button class="small" id="download">Download selected</button>
+      <button class="ghost small" id="select-all">Select all</button>
+      <button class="ghost small" id="select-none">Clear</button>
+      <span class="grow"></span>
+      <span class="muted" id="picked-count"></span>
+    </div>
+
+    <div id="tiers"></div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p class="muted">Not your event? <a href="/index.html">Enter a different code</a>.</p>
+</footer>
+
+<script type="module" src="/static/find.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# Smriti -- runtime dependencies.
+# Everything here is free and open source. No paid services, no API keys, and
+# no third party ever sees a face: all inference runs on your own machine.
+
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.9      # multipart/form-data uploads
+
+numpy>=1.26
+pillow>=10.0                 # decoding, EXIF orientation, thumbnails
+opencv-python-headless>=4.9  # YuNet + SFace via cv2.dnn (4.9 for the 2023mar detector)
+
+# --- optional: the accuracy upgrade -----------------------------------------
+# The default 'sface' engine needs nothing below. Installing onnxruntime unlocks
+# SMRITI_ENGINE=arcface (512-d ArcFace R50): materially better separation, and
+# about 10x slower per photo on CPU. See README.md for the measured difference.
+#
+#   pip install onnxruntime          # or onnxruntime-gpu on an NVIDIA box
+#   python cli.py models --download arcface
+#
+# 'insightface' (pip install insightface onnxruntime) enables SMRITI_ENGINE=
+# insightface, which uses the same recognition weights behind InsightFace's own
+# detector and model-zoo downloader.

@@ -1,0 +1,35 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- OS / editors ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Smriti runtime data --------------------------------------------------
+# Everything under data/ is generated: uploaded photos, thumbnails, the SQLite
+# database, downloaded model weights, and the per-installation signing key.
+# None of it belongs in version control, and some of it is other people's faces.
+data/
+
+# Model weights, if WEIGHTS_DIR is pointed somewhere else.
+*.onnx
+weights/
+
+# Benchmark datasets are other people's photos too.
+dataset/
+demo_truth_*.json
+
+# --- Secrets: never commit ---
+.env
+*.key
+*.pem
+*token*.txt

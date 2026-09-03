@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smriti — find every photo you're in</title>
+<meta name="description" content="Upload one selfie, get back only the photos you appear in.">
+<link rel="stylesheet" href="/static/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>📷</text></svg>">
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" href="/index.html">
+    <span class="mark">स</span>
+    <b>Smriti</b>
+  </a>
+  <div class="spacer"></div>
+  <a class="btn ghost small" href="/admin.html">Organiser</a>
+</header>
+
+<main class="wrap narrow">
+  <h1>Find every photo you're in.</h1>
+  <p class="lede">
+    Someone shared an album of a few hundred photos. Upload one selfie and get
+    back only the ones with you in them — nobody has to scroll through the rest.
+  </p>
+
+  <div class="card" style="margin-top:26px">
+    <h3>Have an event code?</h3>
+    <form id="join">
+      <label class="field">
+        <span>Enter the 8-character code the organiser shared</span>
+        <input class="code-input" id="code" name="code" maxlength="10"
+               autocomplete="off" autocapitalize="characters" spellcheck="false"
+               placeholder="ABCD2345" required>
+      </label>
+      <button type="submit" id="go">Find my photos</button>
+    </form>
+    <div id="msg"></div>
+  </div>
+
+  <h2>How it works</h2>
+  <ol class="steps">
+    <li><b>The organiser uploads the album once.</b> Every face in every photo is
+        detected and turned into a numeric fingerprint.</li>
+    <li><b>You upload one selfie.</b> It is compared against those fingerprints
+        in memory and then discarded — your selfie is never saved to disk.</li>
+    <li><b>You get your photos.</b> Ranked by confidence, with a one-click ZIP of
+        everything you pick.</li>
+  </ol>
+
+  <div class="card tight">
+    <h3>What this does with your face</h3>
+    <p class="muted" style="margin:0">
+      Face matching is done entirely on the server that hosts this page — no
+      third-party service, no cloud API, nothing sent anywhere else. The album
+      organiser stores face fingerprints for the photos they uploaded; your
+      selfie is held in memory for the length of one search and never written to
+      disk. Events are deleted automatically after the organiser's retention
+      period. If you would rather not be searchable at all, ask the organiser to
+      remove the photos of you — they can delete individual photos at any time.
+    </p>
+  </div>
+</main>
+
+<footer class="wrap narrow">
+  <p class="muted">
+    Smriti · self-hosted face search for shared albums ·
+    <a href="/docs">API docs</a>
+  </p>
+</footer>
+
+<script type="module">
+import { $, api, notice } from '/static/common.js';
+
+const form = $('#join'), input = $('#code'), button = $('#go'), msg = $('#msg');
+
+input.addEventListener('input', () => {
+  input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+});
+
+form.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const code = input.value.trim();
+  if (code.length < 6) return notice(msg, 'That code looks too short.', 'bad');
+  button.disabled = true;
+  try {
+    await api(`/api/events/by-code/${encodeURIComponent(code)}`);
+    location.href = `/find.html?code=${encodeURIComponent(code)}`;
+  } catch (error) {
+    notice(msg, error.message, 'bad');
+    button.disabled = false;
+  }
+});
+
+// Deep link straight through: /index.html?code=ABCD2345
+const preset = new URLSearchParams(location.search).get('code');
+if (preset) { input.value = preset.toUpperCase(); form.requestSubmit(); }
+</script>
+</body>
+</html>
